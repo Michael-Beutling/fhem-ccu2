@@ -5,13 +5,18 @@
 ################################################################################
 
 FHEM_VERSION = HEAD
-FHEM_SITE_METHOD = svn
-FHEM_SITE = svn://svn.code.sf.net/p/fhem/code/trunk
+FHEM_SITE_METHOD = local
+FHEM_SITE = $(FHEM_PKGDIR).
 FHEM_LICENSE = GPLv3+
 FHEM_LICENSE_FILES = COPYING
 FHEM_DEPENDENCIES = perl-device-serialport perl-json
 
 define FHEM_BUILD_CMDS
+	wget `cat $(@D)/controls.txt` -O $(@D)/controls_fhem.txt
+	echo revision=`gawk 'NR==1{print $$2}' '$(@D)/controls_fhem.txt'`
+	svn checkout -r `gawk 'NR==1{print $$2}' '$(@D)/controls_fhem.txt'` svn://svn.code.sf.net/p/fhem/code/trunk '$(@D)'
+	cp $(@D)/controls.txt $(@D)/fhem/FHEM/
+	cp $(@D)/controls_fhem.txt $(@D)/fhem/FHEM/
 endef
 
 define FHEM_INSTALL_TARGET_CMDS
