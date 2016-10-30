@@ -1,0 +1,5 @@
+source "$BR2_EXTERNAL/package/perl-device-serialport/Config.in"
+source "$BR2_EXTERNAL/package/perl-json/Config.in"
+source "$BR2_EXTERNAL/package/fhem/Config.in"
+source "$BR2_EXTERNAL/package/perl-dbi/Config.in"
+source "$BR2_EXTERNAL/package/perl-dbd-sqlite/Config.in"

@@ -1,0 +1,12 @@
+.vagrant
+research
+u-boot.bin
+uImage
+update.tgz
+zImage
+dropbear_ecdsa_host_key
+authorized_keys
+board/ccu2/overlay/opt/
+fhem/
+do_factory_reset.tgz
+fhem-ccu2.tgz

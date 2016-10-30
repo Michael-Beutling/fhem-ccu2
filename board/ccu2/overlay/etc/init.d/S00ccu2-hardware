@@ -1,0 +1,56 @@
+#!/bin/sh
+#
+# set System Start Led Signal
+#
+
+SERIAL=$(cat /sys/module/plat_eq3ccu2/parameters/board_serial)
+
+start() {
+	printf "load CCU2 modules: "
+	
+	modprobe spidev
+        modprobe ic200_spi
+        modprobe spi_eq3_gpio
+        modprobe spi_bitbang
+        modprobe gpio-keys
+        modprobe fsl_usb2_udc.ko
+	
+	# Tunneling
+        modprobe tun
+       
+	# USB
+        modprobe ehci-hcd
+
+	# HM/HmIP Dual Protocol
+	modprobe mxs_raw_auart
+	modprobe eq3_char_loop
+	 
+	echo "OK"
+}
+
+stop () {
+	true
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

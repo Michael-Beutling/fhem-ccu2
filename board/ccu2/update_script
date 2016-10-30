@@ -1,0 +1,29 @@
+#!/bin/sh
+
+#/bin/sed  -i -e s,^root:[^:]*:,root::, /etc/shadow
+
+#sleep 3600
+
+STARTPWD=`pwd`
+ROOT_FS=rootfs.ubi
+KERNEL_IMAGE=uImage
+
+ROOT_MTDCHAR=/dev/mtd7
+USER_MTDCHAR=/dev/mtd6
+
+KERNEL_MTDCHAR=/dev/mtd5
+
+if [ -f $STARTPWD/$KERNEL_IMAGE ]; then
+ 	echo "Erasing kernel partition ..."            
+ 	flash_erase $KERNEL_MTDCHAR 0 0                      
+ 	echo "Writing kernel to NAND ..."         
+  	nandwrite -p $KERNEL_MTDCHAR $KERNEL_IMAGE
+fi
+
+if [ -f $STARTPWD/$ROOT_FS ]; then
+  	echo "Writing rootfs to NAND ..."
+	ubidetach -p $USER_MTDCHAR
+	ubiformat $USER_MTDCHAR -f $ROOT_FS
+fi
+
+

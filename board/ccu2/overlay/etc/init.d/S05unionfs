@@ -1,0 +1,82 @@
+#!/bin/sh
+#
+# Start UnionFS
+#
+
+do_overlay() {
+	printf "mount fhem filesystem: "
+	mount -t ubifs -o noatime ubi1:user /mnt/user || return 
+	printf "OK\nmount unionFS: "
+	modprobe unionfs || return
+	mount -t unionfs -o dirs=/mnt/user=rw:/=ro unionfs /mnt/new_root || return
+	cd /mnt/new_root || return
+	printf "OK\nremount rootfs (noatime): "
+	mount -o remount,noatime / || return     
+	printf "OK\nmove dev,tmp,run: "
+	mkdir -p /mnt/new_root/mnt/old_root || return
+	mount -o move /dev /mnt/new_root/dev || return     
+	mount -o move /tmp /mnt/new_root/tmp || return
+	mount -o move /run /mnt/new_root/run || return
+	printf "OK\nunmount sys,proc: "
+	umount /sys || return
+	umount /proc  || return
+	printf "OK\npivot rootfs: "
+	pivot_root . mnt/old_root || return
+	printf "OK\nmount sys,proc: "
+	mount /proc || return
+	mount /sys || return
+	return;
+}
+
+start() {
+	if ! ubinfo /dev/ubi1 -N user 2&>1 >/dev/null
+	then
+		echo "Formating user space: "
+		if ubidetach -p /dev/mtd7 && ubiformat  /dev/mtd7 && ubiattach -p /dev/mtd7 && ubimkvol /dev/ubi1 -N user -m
+		then
+			echo "Format OK"
+		else
+			echo "Format FAIL!"
+		fi
+	fi
+
+	if ubinfo /dev/ubi1 -N user 2&>1 >/dev/null
+	then
+		if do_overlay
+		then
+			/sbin/led info off
+			echo "OK"
+		else
+			echo "FAIL"
+		fi
+	else
+		echo "Fatal error! user filesystem not found!"
+		/sbin/led power fast
+		/sbin/led internet off
+		/sbin/led info fast
+		
+	fi
+}
+
+stop() {
+	true
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	stop
+	start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

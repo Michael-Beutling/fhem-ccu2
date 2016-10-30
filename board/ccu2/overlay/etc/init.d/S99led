@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# Finish Boot
+#
+
+
+start() {
+	echo "Boot finish, Power LED on"
+	/sbin/led power on
+}
+
+stop () {
+	echo "Boot finish, Power LED flashing"
+	/sbin/led power flash
+	/sbin/led internet off
+	/sbin/led info off
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

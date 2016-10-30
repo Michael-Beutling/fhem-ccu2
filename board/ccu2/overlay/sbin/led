@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# set System Start Led Signal
+#
+
+
+
+
+usage() {
+	echo "Usage: $0 {power|internet|info} {off|on|slow|mid|fast|flash}"
+	exit 1
+}
+
+case "$1" in
+  power)
+	;;
+  internet)
+	;;
+  info)
+	;;
+  *)
+	usage
+esac
+
+case "$2" in
+  on)
+	echo 255 > /sys/class/leds/$1/brightness
+	echo default-on > /sys/class/leds/$1/trigger
+	;;
+  off)
+	echo 0 > /sys/class/leds/$1/brightness
+	echo none > /sys/class/leds/$1/trigger
+	;;
+  slow)
+	echo none > /sys/class/leds/$1/trigger
+	echo 255 > /sys/class/leds/$1/brightness
+	echo timer > /sys/class/leds/$1/trigger
+	echo 1000 > /sys/class/leds/$1/delay_off
+	echo 1000 > /sys/class/leds/$1/delay_on
+	;;
+  mid)
+	echo none > /sys/class/leds/$1/trigger
+	echo 255 > /sys/class/leds/$1/brightness
+	echo timer > /sys/class/leds/$1/trigger
+	echo 499 > /sys/class/leds/$1/delay_off
+	echo 501 > /sys/class/leds/$1/delay_on
+	;;
+  fast)
+	echo none > /sys/class/leds/$1/trigger
+	echo 255 > /sys/class/leds/$1/brightness
+	echo timer > /sys/class/leds/$1/trigger
+	echo 100 > /sys/class/leds/$1/delay_off
+	echo 100 > /sys/class/leds/$1/delay_on
+	;;
+  flash)
+	echo none > /sys/class/leds/$1/trigger
+	echo 255 > /sys/class/leds/$1/brightness
+	echo timer > /sys/class/leds/$1/trigger
+	echo 450 > /sys/class/leds/$1/delay_off
+	echo 50 > /sys/class/leds/$1/delay_on
+	;;
+  *)
+	usage
+esac
+
+
+
+exit $?
+

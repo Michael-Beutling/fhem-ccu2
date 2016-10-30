@@ -1,0 +1,12 @@
+config BR2_PACKAGE_FHEM
+        bool "fhem"
+	select BR2_PACKAGE_PERL_DBD_SQLITE
+	select BR2_PACKAGE_PERL
+	select BR2_PACKAGE_PERL_DBI
+	select BR2_PACKAGE_PERL_JSON
+	select BR2_PACKAGE_PERL_DEVICE_SERIALPORT
+        help
+		FHEM (TM) is a GPL'd perl server for house automation. 
+		It is used to automate some common tasks in the household like switching lamps / shutters / heating / etc. 
+		and to log events like temperature / humidity / power consumption.
+
