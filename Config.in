@@ -1,5 +1,12 @@
+source "$BR2_EXTERNAL/package/fhem/Config.in"
+source "$BR2_EXTERNAL/package/fhem-hmrpc/Config.in"
+
+menu "PERL Module"
 source "$BR2_EXTERNAL/package/perl-device-serialport/Config.in"
 source "$BR2_EXTERNAL/package/perl-json/Config.in"
-source "$BR2_EXTERNAL/package/fhem/Config.in"
 source "$BR2_EXTERNAL/package/perl-dbi/Config.in"
 source "$BR2_EXTERNAL/package/perl-dbd-sqlite/Config.in"
+source "$BR2_EXTERNAL/package/perl-rpc-xml/Config.in"
+source "$BR2_EXTERNAL/package/perl-xml-parser/Config.in"
+endmenu
+

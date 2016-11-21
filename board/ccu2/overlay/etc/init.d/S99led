@@ -10,8 +10,8 @@ start() {
 }
 
 stop () {
-	echo "Boot finish, Power LED flashing"
-	/sbin/led power flash
+	echo "halt or reboot"
+	/sbin/led power fast
 	/sbin/led internet off
 	/sbin/led info off
 }

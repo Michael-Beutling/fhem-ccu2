@@ -1,0 +1,4 @@
+#!/bin/sh
+
+DAEMON_ARGS="--daemon --triggers /etc/triggerhappy.conf --socket /var/run/thd.socket --pidfile $PIDFILE --user nobody /dev/input/event*"
+

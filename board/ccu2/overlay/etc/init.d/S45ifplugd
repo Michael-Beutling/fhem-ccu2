@@ -1,0 +1,27 @@
+#!/bin/sh
+
+
+case "$1" in
+'start')
+
+        echo "Starting ifplugd..."
+
+        start-stop-daemon --start --quiet --background --exec /usr/sbin/ifplugd -- -i eth0 -I
+
+        RETVAL=$?
+        ;;
+'stop')
+        echo "Stopping ifplugd..."
+	start-stop-daemon --stop --quiet --exec /usr/sbin/ifplugd
+        RETVAL=$?
+        ;;
+'restart'|'reload')
+	"$0" stop
+	"$0" start
+	;;
+*)
+        echo "Usage: $0 { start | stop }"
+        RETVAL=1
+        ;;
+esac
+exit $RETVAL

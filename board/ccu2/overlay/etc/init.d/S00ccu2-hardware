@@ -12,7 +12,6 @@ start() {
         modprobe ic200_spi
         modprobe spi_eq3_gpio
         modprobe spi_bitbang
-        modprobe gpio-keys
         modprobe fsl_usb2_udc.ko
 	
 	# Tunneling
@@ -20,16 +19,31 @@ start() {
        
 	# USB
         modprobe ehci-hcd
+	modprobe sd_mod
+	modprobe usb-storage
+	modprobe vfat
+	
+	# MMC
+	modprobe mxs-mmc
+	modprobe mmc_block
+
 
 	# HM/HmIP Dual Protocol
 	modprobe mxs_raw_auart
 	modprobe eq3_char_loop
-	 
+
+	# button 
+        modprobe gpio-keys
+	modprobe evdev
+
+	# CUL driver
+	modprobe cdc-acm	 
+
 	echo "OK"
 }
 
 stop () {
-	true
+	/sbin/led power flash
 }
 
 restart() {

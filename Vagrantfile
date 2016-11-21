@@ -9,7 +9,7 @@ RELEASE='2016.02'
 
 ### Change here for more memory/cores ###
 VM_MEMORY=2048
-VM_CORES=1
+VM_CORES=2
 
 Vagrant.configure('2') do |config|
 	config.vm.box = 'ubuntu/trusty64'
@@ -58,5 +58,5 @@ Vagrant.configure('2') do |config|
 		#tar axf buildroot-#{RELEASE}.tar.gz
 		#git clone https://github.com/eq-3/occu.git
 		make BR2_EXTERNAL=/vagrant ccu2_defconfig
-		make BR2_EXTERNAL=/vagrant"
+		make -s"
 	end

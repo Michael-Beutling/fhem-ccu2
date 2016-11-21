@@ -1,0 +1,16 @@
+#!/bin/sh
+LED=off
+case "$1" in
+	deconfig)
+		LED=off
+		;;
+	leasefail|nak)
+		LED=fast
+		;;
+	renew|bound)
+		LED=on		
+		;;
+esac
+
+echo $LED > /var/cache/internet.state
+/sbin/led internet $LED

@@ -3,8 +3,11 @@
 # Start UnionFS
 #
 
+MMC=/dev/mmcblk0p1
+MNTPOINT=/media
+
 do_overlay() {
-	printf "mount fhem filesystem: "
+	printf "mount user filesystem: "
 	mount -t ubifs -o noatime ubi1:user /mnt/user || return 
 	printf "OK\nmount unionFS: "
 	modprobe unionfs || return
@@ -29,22 +32,61 @@ do_overlay() {
 }
 
 start() {
-	if ! ubinfo /dev/ubi1 -N user 2&>1 >/dev/null
+	
+	if [ -f /.trigger_restore ]
 	then
-		echo "Formating user space: "
-		if ubidetach -p /dev/mtd7 && ubiformat  /dev/mtd7 && ubiattach -p /dev/mtd7 && ubimkvol /dev/ubi1 -N user -m
-		then
-			echo "Format OK"
-		else
-			echo "Format FAIL!"
+		/sbin/led info slow
+		echo  "restore triggered ..."
+		if [ ! -b $MMC ] ; then
+			echo "no sd card found, waiting 10 s ..."
+			sleep 10 
 		fi
+		if [  -b $MMC ] ; then 
+			echo -n "mount sd card: "		
+			mount $MMC $MNTPOINT
+			if [ -f $MNTPOINT/fhem-backup-latest.txt ];then
+				BCKFILE="`cat $MNTPOINT/fhem-backup-latest.txt`"
+				if [ -f $MNTPOINT/$BCKFILE ] ;then
+					echo -n "found $BCKFILE check: "
+					if zcat $MNTPOINT/$BCKFILE >/dev/null ;then
+						echo "valid"
+						echo -n "Formating user space: "
+						if ubidetach -p /dev/mtd7 && ubiformat  /dev/mtd7 && ubiattach -p /dev/mtd7 && ubimkvol /dev/ubi1 -N user -m
+                				then
+                        				echo "Format OK"
+                				else
+                        				echo "Format FAIL!"
+                				fi
+						echo "mount user filesystem and restore $BCKFILE :"	
+						mount -t ubifs -o noatime ubi1:user /mnt/user && zcat $MNTPOINT/$BCKFILE | tar x -C /mnt/user 
+						if [ $? -eq 0 ]; then
+							/sbin/led info off
+							echo "OK"
+						else
+							echo "FAIL!"
+						fi
+						umount /mnt/user
+
+					else
+						echo "invalid, restore canceled"
+						/sbin/led power fast
+						/sbin/led info fast
+					fi
+				fi
+			else
+				echo " no backup found"
+			fi
+			
+			umount $MNTPOINT 
+		fi
+		rm /.trigger_restore
+	 
 	fi
 
-	if ubinfo /dev/ubi1 -N user 2&>1 >/dev/null
+	if ubinfo /dev/ubi1 -N user 2>/dev/null >/dev/null
 	then
 		if do_overlay
 		then
-			/sbin/led info off
 			echo "OK"
 		else
 			echo "FAIL"
@@ -52,14 +94,13 @@ start() {
 	else
 		echo "Fatal error! user filesystem not found!"
 		/sbin/led power fast
-		/sbin/led internet off
 		/sbin/led info fast
-		
 	fi
 }
 
 stop() {
-	true
+	mount -o remount,ro /mnt/old_root
+	mount -o remount,ro /mnt/old_root/mnt/user/
 }
 
 case "$1" in

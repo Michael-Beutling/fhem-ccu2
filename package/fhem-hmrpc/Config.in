@@ -1,0 +1,9 @@
+config BR2_PACKAGE_FHEM_HMRPC
+        bool "fhem-hmrpc"
+	depends on BR2_PACKAGE_FHEM
+	select BR2_PACKAGE_PERL_XML_PARSER
+	select BR2_PACKAGE_PERL_RPC_XML 
+        help
+		Module to access the Homematic XML-RPC API of a CCU with FHEM
+		
+		https://github.com/henryk/fhem-HMRPC

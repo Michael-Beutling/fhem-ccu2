@@ -1,0 +1,77 @@
+#!/bin/sh
+#
+# Starts multimacd.
+# 
+#
+
+source /etc/settings
+PIDFILE=/var/run/multimacd.pid
+
+check_avr(){
+	/bin/avrprog --devinfo | grep -q ec,fd,da,ef
+	if ! [ 0 -eq $? ];then
+		/bin/avrprog --bo
+		/bin/eq3configcmd update-coprocessor -p "/dev/mxs_auart_raw.0" -u -f
+		sleep 1
+		/bin/avrprog --devinfo | grep -q ec,fd,da,ef
+		if ! [ 0 -eq $? ];then
+                	echo "coprocessor not found?"
+        	fi
+	fi
+	/bin/eq3configcmd update-coprocessor -p "/dev/mxs_auart_raw.0" -u 
+}
+
+
+start() {
+        if [ ! -e $PIDFILE ] ; then
+		echo -n "prepare coprocessor: "
+		check_avr
+       		sed 1q /sys/module/plat_eq3ccu2/parameters/radio_mac > /var/log/rf_address
+        	/bin/eq3configcmd read-default-rf-address -l 0 -v -h -f /dev/mxs_auart_raw.0 | grep -q -F -f /var/log/rf_address
+		if  [ 0 -eq $? ];
+        	then
+			echo "OK"
+		else 
+			echo "FAIL!"
+			exit 1;
+		fi
+        else
+                echo "Skipping coprocessor update because multimacd is running."
+        fi
+
+	echo -n "Starting multimacd: "
+	
+	start-stop-daemon -S -q -b -m -p $PIDFILE --exec /bin/multimacd -- -f /etc/config/multimacd.conf -l $LOGLEVEL_RFD
+	sleep 2
+	echo "OK"
+		
+}
+
+stop () {
+	echo -n "Stopping multimacd: "
+	start-stop-daemon -K -q -p $PIDFILE
+	rm -f $PIDFILE
+	echo "OK"
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?

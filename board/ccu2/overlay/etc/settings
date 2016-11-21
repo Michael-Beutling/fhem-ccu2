@@ -1,0 +1,11 @@
+#!/bin/sh
+
+LOGLEVEL_REGA=2
+LOGLEVEL_RFD=5
+
+if [ -f /var/run/settings ] ;then
+	source /var/run/settings
+fi
+
+
+

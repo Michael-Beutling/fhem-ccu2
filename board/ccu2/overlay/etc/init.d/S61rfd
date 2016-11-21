@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Starts rfd.
+#
+
+source /etc/settings
+PIDFILE=/var/run/rfd.pid
+
+
+start() {
+	echo "Waiting for multimacd to get ready"
+	eq3configcmd wait-for-file -f /dev/mmd_bidcos -p 1 -t 5
+	echo -n "Starting rfd: "
+	start-stop-daemon -S -q -b -m -p $PIDFILE --exec /bin/rfd -- -f /etc/config/rfd.conf -l $LOGLEVEL_RFD
+	echo "OK"
+}
+
+stop() {
+	echo -n "Stopping rfd: "
+	start-stop-daemon -K -q -p $PIDFILE
+	rm -f $PIDFILE
+	echo "OK"
+}
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

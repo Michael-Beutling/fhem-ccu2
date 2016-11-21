@@ -1,29 +1,233 @@
 #!/bin/sh
 
-#/bin/sed  -i -e s,^root:[^:]*:,root::, /etc/shadow
-
-#sleep 3600
-
 STARTPWD=`pwd`
 ROOT_FS=rootfs.ubi
 KERNEL_IMAGE=uImage
 
+# Root & User FS eq-3 like :)
 ROOT_MTDCHAR=/dev/mtd7
 USER_MTDCHAR=/dev/mtd6
-
 KERNEL_MTDCHAR=/dev/mtd5
 
-if [ -f $STARTPWD/$KERNEL_IMAGE ]; then
- 	echo "Erasing kernel partition ..."            
- 	flash_erase $KERNEL_MTDCHAR 0 0                      
- 	echo "Writing kernel to NAND ..."         
-  	nandwrite -p $KERNEL_MTDCHAR $KERNEL_IMAGE
+EQ3BINS="bin/rfd bin/avrprog bin/eq3configcmd bin/eq3configd bin/multimacd bin/SetInterfaceClock bin/ReGaHss\
+ bin/hm_autoconf bin/hm_startup bin/hm_deldev firmware/\
+ boot/VERSION\
+ lib/libelvutils.so lib/libhsscomm.so lib/libxmlparser.so lib/libXmlRpc.so lib/libLanDeviceUtils.so lib/libUnifiedLanComm.so\
+ lib/libeq3config.so" 
+
+if grep -q ubi1:user /proc/mounts ;then
+	umount /usr/local/
 fi
+
+if grep -q /mnt /proc/mounts ;then
+	umount /mnt
+fi
+
+if [ -e /dev/ubi0 ]; then
+	ubidetach -d 0
+fi
+
+if [ -e /dev/ubi1 ]; then
+	ubidetach -d 1
+fi
+
+if [ -f busybox ]; then
+	echo
+  	echo "Stopping update ..."
+	passwd -d root
+	cp ld-linux.so.3 ld-2.18.so libc.so.6 libc-2.18.so /lib
+	mkdir -p /dev/pts
+	mount -t devpts devpts /dev/pts
+	./busybox telnetd -l /bin/sh
+	while(true)
+	do
+		sleep 7200
+	done
+fi
+
+if [ -f mmc_hook ]; then
+	rm -f mmc_hook
+	mount /dev/mmcblk0p1  /media/
+	if [ -f /media/mmc_hook ] ;then
+		cd /media
+		./mmc_hook
+		cd $STARTPWD
+		umount /media
+		exit 1;
+	fi
+		
+fi
+
+# Save eq-3 binaries
+echo 
+echo Saving eQ-3 binaries...
+ROOT=unkown
+GOTBIN=no
+ubiattach -p $ROOT_MTDCHAR
+if  ubinfo -d 0 -N root 2>/dev/null >/dev/null;then
+	echo "try old rootfs..."
+	mount -t ubifs ubi0:root /mnt
+	ROOT=old
+else
+	echo try new rootfs...
+	ubidetach -d 0
+	ubiattach -p $USER_MTDCHAR
+	if  ubinfo -d 0 -N root 2>/dev/null >/dev/null;then
+		mount -t ubifs ubi0:root /mnt
+		ROOT=new
+	else
+		echo "*** Error: Rootfs not found!"
+		echo secondary >/sys/module/plat_eq3ccu2/parameters/boot
+		exit 1;
+	fi
+fi
+
+
+if [ -f /mnt/lib/libeq3config.so ] ;then
+	if tar cf eq3.tar -C /mnt $EQ3BINS ;then
+		echo "check eq3 binaries..."
+		rm -rf check
+		mkdir -p check
+		tar xf $STARTPWD/eq3.tar -C check
+		cd check
+		if ! [ -f /mnt/root/eq3.md5 ] ; then
+			find . -exec md5sum -b  {} \; > ../eq3.md5
+		else
+			cp /mnt/root/eq3.md5 $STARTPWD
+		fi
+		cd /mnt
+		if md5sum -cs $STARTPWD/eq3.md5 ;then
+			GOTBIN=yes;
+			echo "binaries succesfull extracted..." 
+		fi
+		cd $STARTPWD
+		umount /mnt
+		ubidetach -d 0
+	fi
+fi 
+
+if [ $GOTBIN != yes ] ;then
+	echo
+	echo "*** Error: Update abort , can't save eq-3 binaries..."
+	echo secondary >/sys/module/plat_eq3ccu2/parameters/boot
+	exit 1
+fi
+
+# save old configs
+
+ubiattach -p $USER_MTDCHAR
+
+if  ubinfo -d 0 -N user 2>/dev/null >/dev/null;then
+        echo -n "save user configs..."
+        mount -t ubifs ubi0:user /mnt
+	LIST=
+	for i in etc/config/rfd etc/config/multimacd.conf etc/config/ids etc/config/homematic.regadom etc/config/time.conf ;do 
+		if [ -e /mnt/$i ];then 
+			LIST="$LIST $i"
+		fi 
+	done
+	echo "LIST='$LIST'"
+	if [ -n "$LIST" ]; then
+		if tar cf userdatas.tar -C /mnt $LIST && tar cf userdatas_full.tar -C /mnt . ; then
+			echo "ok" 
+		else
+			echo
+			echo
+			echo "*** Error: Update abort , can't save user configs..."
+			echo secondary >/sys/module/plat_eq3ccu2/parameters/boot
+			exit 1
+		fi
+	else
+		echo "no user datas found..."
+	fi	
+        umount /mnt
+fi
+
+ubidetach -d 0
+
+# kernel stuff
+
+if [ -f $STARTPWD/$KERNEL_IMAGE ]; then
+	echo 
+ 	echo "Erasing kernel partition ..."
+ 	flash_erase -q $KERNEL_MTDCHAR 0 0
+ 	echo "Writing kernel to NAND ..."
+  	nandwrite -q -p $KERNEL_MTDCHAR $KERNEL_IMAGE
+fi
+
+# FHEM-CCU2 change the game: rootfs swap userfs!
 
 if [ -f $STARTPWD/$ROOT_FS ]; then
+	echo
   	echo "Writing rootfs to NAND ..."
-	ubidetach -p $USER_MTDCHAR
-	ubiformat $USER_MTDCHAR -f $ROOT_FS
+	ubiformat -q $USER_MTDCHAR -f $ROOT_FS
+	echo "mounting new rootfs..."
+	ubiattach -p $USER_MTDCHAR 
+	mount -t ubifs ubi0:root /mnt
+	echo Polute eq3 binaries in new rootfs...
+	tar xf eq3.tar -C /mnt
+	mkdir -p /mnt/root
+	cp $STARTPWD/eq3.md5 /mnt/root
+	cd /mnt
+	if md5sum -cs $STARTPWD/eq3.md5 ;then
+                echo "binaries succesfull extracted..."
+	else
+		echo
+		echo "*** Error: Update abort , can't save eq-3 binaries..."
+		echo secondary >/sys/module/plat_eq3ccu2/parameters/boot
+	        exit 1
+	fi
+	cd $STARTPWD
+	umount /mnt
+	ubidetach -d 0
 fi
 
+if [ -f fhem.tgz ] ; then
+	echo
+	echo Preparing new userfs...
+	USER=yes
 
+	ubiattach -p $ROOT_MTDCHAR
+	# check userfs
+	if  ! ubinfo -d 0 -N user 2>/dev/null >/dev/null;then
+		echo
+		echo Warning,no userfs found...
+		USER=no
+	fi
+
+	if [ -f $STARTPWD/erase_userfs ] || [ $USER = no ] ; then
+  		echo "Create or cleaning userfs  ..."
+		ubidetach -d 0
+		ubiformat -q $ROOT_MTDCHAR
+ 		ubiattach -p $ROOT_MTDCHAR
+		ubimkvol /dev/ubi0 -N user -m
+	fi
+
+
+	# check userfs
+	if  ubinfo -d 0 -N user 2>/dev/null >/dev/null;then
+		mount -t ubifs ubi0:user /mnt
+		if [ -f userdatas.tar ] ;then
+			echo "write old user configs..."
+			tar xf userdatas.tar -C /mnt
+		fi
+		if [ -f userdatas_full.tar ] ;then
+			mkdir -p /mnt/root
+			cp -f userdatas_full.tar /mnt/root
+		fi
+		if [ ! -e /mnt/opt/fhem ] ; then
+			mkdir -p /mnt/opt/
+			echo "Install FHEM..."
+			zcat fhem.tgz|tar x -C /mnt/opt
+		else
+			echo "Found FHEM installation, please use the FHEM update function."  
+		fi
+		umount /mnt
+		ubidetach -d 0
+	fi
+
+fi
+
+echo 
+echo "Update script normally finish"
+echo

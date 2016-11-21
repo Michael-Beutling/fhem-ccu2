@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Starts ReGaHss.
+#
+
+source /etc/settings
+
+PIDFILE=/var/run/ReGaHss.pid
+
+start() {
+	echo -n "Starting ReGaHss: "
+	start-stop-daemon -S -q -b -m -p $PIDFILE --exec /bin/ReGaHss -- -f /etc/rega.conf -l $LOGLEVEL_REGA < /dev/null&
+	echo "OK"
+}
+stop() {
+	echo -n "Stopping ReGaHss: "
+	start-stop-daemon -K -q  --exec /bin/ReGaHss 
+	rm -f $PIDFILE
+	echo "OK"
+}
+restart() {
+	stop
+	echo -n "waiting shutdown "
+	while start-stop-daemon -K -t -q  --exec  /bin/ReGaHss  ;do
+		echo -n "."
+		sleep 1
+	done
+	echo 
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

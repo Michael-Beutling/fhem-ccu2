@@ -1,0 +1,25 @@
+#!/bin/sh
+LED=off
+if [ -f /var/cache/internet.state ] ; then
+	LED=`cat /var/cache/internet.state`
+fi
+
+case "$2" in
+'up')
+	
+	/sbin/led internet $LED
+	/sbin/ifup eth0
+        RETVAL=$?
+        ;;
+'down')
+	/sbin/led internet off
+	echo off > /var/cache/internet.state
+	/sbin/ifdown eth0
+        RETVAL=$?
+        ;;
+*)
+        RETVAL=1
+        ;;
+esac
+exit $RETVAL
+

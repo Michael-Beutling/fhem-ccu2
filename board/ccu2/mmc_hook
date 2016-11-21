@@ -1,0 +1,78 @@
+#!/bin/sh
+cd /media
+echo '***************************************************************************************************************************************'
+echo
+echo install stock firmware
+echo
+echo '***************************************************************************************************************************************'
+umount /mnt
+ROOT_MTDCHAR=/dev/mtd7
+USER_MTDCHAR=/dev/mtd6
+KERNEL_MTDCHAR=/dev/mtd5
+
+ubidetach -p $USER_MTDCHAR
+ubidetach -p $ROOT_MTDCHAR
+echo "Erasing Kernel Flash ..."
+flash_erase -q $KERNEL_MTDCHAR 0 0
+ubiformat -q $USER_MTDCHAR 
+echo "Erasing User Flash ..."
+ubiattach -p $USER_MTDCHAR 
+ubimkvol /dev/ubi0 -N user -m
+ubidetach -p $USER_MTDCHAR
+		
+echo "Erasing Root Flash ..."
+ubiformat -q $ROOT_MTDCHAR 
+cd stock
+#./update_script
+
+STARTPWD=`pwd`
+ROOT_FS=rootfs.ubi
+KERNEL_IMAGE=uImage
+
+if [ -f $STARTPWD/$KERNEL_IMAGE ]; then
+ 	echo "Erasing kernel partition ..."            
+ 	flash_erase -q $KERNEL_MTDCHAR 0 0                      
+ 	echo "Writing kernel to NAND ..."         
+  	nandwrite -q -p $KERNEL_MTDCHAR $KERNEL_IMAGE
+fi
+
+if [ -f $STARTPWD/$ROOT_FS ]; then
+  	echo "Writing rootfs to NAND ..."
+	ubidetach -p $ROOT_MTDCHAR
+	ubiformat -q $ROOT_MTDCHAR -f $ROOT_FS
+fi
+
+cd /var
+rm -f busybox
+echo
+echo '***************************************************************************************************************************************'
+echo 
+echo install first time
+echo
+echo '***************************************************************************************************************************************'
+sh ./update_script
+
+echo
+echo errorlevel=$?
+echo
+
+echo '***************************************************************************************************************************************'
+echo
+echo install second time
+echo
+echo '***************************************************************************************************************************************'
+sh ./update_script
+
+echo
+echo errorlevel=$?
+echo
+
+echo '***************************************************************************************************************************************'
+echo
+echo finish
+echo
+echo '***************************************************************************************************************************************'
+
+ubiattach -p $USER_MTDCHAR
+mount -t ubifs ubi0:root /mnt
+touch /mnt/.trigger_restore

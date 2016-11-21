@@ -1,0 +1,2 @@
+#!/bin/sh
+wget http://localhost:2001/RPC2 --header="Content-Type: text/xml" --post-data="<?xml version='1.0' encoding='UTF-8'?><methodCall><methodName>setInstallMode</methodName><params><param><value><boolean>1</boolean></value></param></params></methodCall>" -O /dev/null -q
