@@ -6,6 +6,12 @@
 MMC=/dev/mmcblk0p1
 MNTPOINT=/media
 
+log(){
+	echo "$1"
+	logger -p user.info -t restore "$1"
+
+}
+
 do_overlay() {
 	printf "mount user filesystem: "
 	mount -t ubifs -o noatime ubi1:user /mnt/user || return 
@@ -36,51 +42,52 @@ start() {
 	if [ -f /.trigger_restore ]
 	then
 		/sbin/led info slow
-		echo  "restore triggered ..."
+		watchdog -t 5 /dev/watchdog
+		log "restore triggered ..."
 		if [ ! -b $MMC ] ; then
-			echo "no sd card found, waiting 10 s ..."
+			log "no sd card found, waiting 10 s ..."
 			sleep 10 
 		fi
 		if [  -b $MMC ] ; then 
-			echo -n "mount sd card: "		
+			log "mount sd card"		
 			mount $MMC $MNTPOINT
 			if [ -f $MNTPOINT/fhem-backup-latest.txt ];then
 				BCKFILE="`cat $MNTPOINT/fhem-backup-latest.txt`"
 				if [ -f $MNTPOINT/$BCKFILE ] ;then
-					echo -n "found $BCKFILE check: "
+					log "found $BCKFILE"
 					if zcat $MNTPOINT/$BCKFILE >/dev/null ;then
-						echo "valid"
-						echo -n "Formating user space: "
+						log "backup file valid"
+						log "Formating user file system"
 						if ubidetach -p /dev/mtd7 && ubiformat  /dev/mtd7 && ubiattach -p /dev/mtd7 && ubimkvol /dev/ubi1 -N user -m
                 				then
-                        				echo "Format OK"
+                        				log "Format OK"
                 				else
-                        				echo "Format FAIL!"
+                        				log "Format FAIL!"
                 				fi
-						echo "mount user filesystem and restore $BCKFILE :"	
+						log "mount user filesystem and restore $BCKFILE"	
 						mount -t ubifs -o noatime ubi1:user /mnt/user && zcat $MNTPOINT/$BCKFILE | tar x -C /mnt/user 
 						if [ $? -eq 0 ]; then
 							/sbin/led info off
-							echo "OK"
+							log "restore OK"
 						else
-							echo "FAIL!"
+							echo "Error: restore fail!"
 						fi
 						umount /mnt/user
 
 					else
-						echo "invalid, restore canceled"
+						log "backup file invalid, restore canceled"
 						/sbin/led power fast
 						/sbin/led info fast
 					fi
 				fi
 			else
-				echo " no backup found"
+				log "no backup file found"
 			fi
 			
 			umount $MNTPOINT 
 		fi
 		rm /.trigger_restore
-	 
+	 	killall watchdog
 	fi
 
 	if ubinfo /dev/ubi1 -N user 2>/dev/null >/dev/null

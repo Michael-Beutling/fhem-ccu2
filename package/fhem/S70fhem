@@ -2,18 +2,8 @@
 # description: Start or stop the fhem server
 # Added by Alex Peuchert
 
-### BEGIN INIT INFO
-# Provides:             fhem.pl
-# Required-Start:       $local_fs $remote_fs
-# Required-Stop:        $local_fs $remote_fs
-# Default-Start:        2 3 4 5
-# Default-Stop:         0 1 6
-# Short-Description:    FHEM server
-### END INIT INFO
 
-set -e
 cd /opt/fhem
-port=7072
 
 case "$1" in
 'start')
@@ -25,16 +15,29 @@ case "$1" in
         RETVAL=$?
         ;;
 'stop')
-        echo "Stopping fhem..."
+        echo -n "Stopping fhem"
 	start-stop-daemon  -q -u fhem -K -x perl
         RETVAL=$?
+	
+	for i in `seq 1 60` ; do
+	        if start-stop-daemon -q -u fhem -K -t -x perl  ; then
+			echo -n "."
+			sleep 1
+		else
+			break
+		fi
+	done
+	if start-stop-daemon -q -u fhem -K -t -x perl  ; then
+		echo " Error: FHEM still running!"
+	else
+		echo " stopped"
+	fi
         ;;
 'status')
-        cnt=`ps -ef | grep "fhem.pl" | grep -v grep | wc -l`
-        if [ "$cnt" -eq "0" ] ; then
-                echo "fhem is not running"
-        else
+        if start-stop-daemon -q -u fhem -K -t -x perl  ; then
                 echo "fhem is running"
+        else
+                echo "fhem is not running"
         fi
         ;;
 *)
