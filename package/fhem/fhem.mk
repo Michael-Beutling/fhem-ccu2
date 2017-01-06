@@ -13,9 +13,9 @@ FHEM_LICENSE_FILES = COPYING
 FHEM_DEPENDENCIES = perl-device-serialport perl-json
 
 define FHEM_BUILD_CMDS
-	wget `cat $(@D)/controls.txt` -q -O $(@D)/controls_fhem.txt
+	wget `cat $(@D)/controls.txt` -q -O $(@D)/controls_fhem.txt --user-agent="" 
 	echo revision=`gawk 'NR==1{print $$2}' '$(@D)/controls_fhem.txt'`
-	svn checkout -q -r `gawk 'NR==1{print $$2}' '$(@D)/controls_fhem.txt'` svn://svn.code.sf.net/p/fhem/code/trunk '$(@D)'
+	svn checkout -q -r `gawk 'NR==1{print $$2}' '$(@D)/controls_fhem.txt'` https://svn.fhem.de/fhem/trunk '$(@D)'
 	cd $(@D)/fhem;make dist
 endef
 
@@ -48,6 +48,7 @@ endef
 
 define FHEM_PERMISSIONS
     /opt/fhem  r  755  fhem  fhem   -  -  -  -  -
+    /bin/ping  r  4755  root  root   -  -  -  -  -
 endef
 
 $(eval $(generic-package))
