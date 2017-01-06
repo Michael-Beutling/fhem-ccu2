@@ -5,7 +5,7 @@
 ################################################################################
 
 # Buildroot version to use
-RELEASE='2016.02'
+RELEASE='2016.11.1'
 
 ### Change here for more memory/cores ###
 VM_MEMORY=2048
@@ -54,9 +54,9 @@ Vagrant.configure('2') do |config|
 
 	config.vm.provision 'shell', privileged: false, inline:
 		"echo 'Downloading and extracting buildroot #{RELEASE}'
+		mkdir fhem-ccu2
+		cd fhem-ccu2
 		wget -q -c -O - http://buildroot.org/downloads/buildroot-#{RELEASE}.tar.gz|tar xz --strip-components=1
-		#tar axf buildroot-#{RELEASE}.tar.gz
-		#git clone https://github.com/eq-3/occu.git
 		make BR2_EXTERNAL=/vagrant ccu2_defconfig
 		make -s"
 	end

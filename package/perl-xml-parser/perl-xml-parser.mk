@@ -36,7 +36,7 @@ define PERL_XML_PARSER_CONFIGURE_1CMDS
                         INSTALLVENDORMAN1DIR=/usr/share/man/man1 \
                         INSTALLVENDORMAN3DIR=/usr/share/man/man3 \
                         $(PERL_XML_PARSER_CONF_OPTS)
-		false
+		#false
                 cd $(PERL_XML_PARSER_SRCDIR); $(PERL_XML_PARSER_CONF_ENV) \
                 PERL_MM_USE_DEFAULT=1 \
                 PERL_AUTOINSTALL=--skipdeps \
@@ -65,6 +65,8 @@ endef
 define PERL_XML_PARSER_FIX_MAKEFILE
 	#set
 	sed -i -e "s#^CC = .*#CC = $(TARGET_CC)#" "$(PERL_XML_PARSER_SRCDIR)Expat/Makefile"
+	sed -i -e 's_-I/usr/local/include__' $(PERL_XML_PARSER_SRCDIR)Expat/Makefile
+	sed -i -e 's_-L/usr/local/lib__' $(PERL_XML_PARSER_SRCDIR)Expat/Makefile
 	#false
 endef
 PERL_XML_PARSER_POST_CONFIGURE_HOOKS += PERL_XML_PARSER_FIX_MAKEFILE
