@@ -8,10 +8,12 @@ cd /opt/fhem
 case "$1" in
 'start')
 
-        echo "Starting fhem..."
-
-        start-stop-daemon -u fhem -S -q -x perl fhem.pl fhem.cfg
-
+        if ! start-stop-daemon -q -u fhem -K -t -x perl  ; then
+	        echo  "Starting fhem..."
+        	start-stop-daemon -u fhem -S -q -x perl fhem.pl fhem.cfg
+	else
+                echo "fhem is running"
+	fi
         RETVAL=$?
         ;;
 'stop')
@@ -28,10 +30,15 @@ case "$1" in
 		fi
 	done
 	if start-stop-daemon -q -u fhem -K -t -x perl  ; then
+		echo -n "  do kill -9,"
+		start-stop-daemon  -q -u fhem -K -x perl -s 9
+	fi
+	if start-stop-daemon -q -u fhem -K -t -x perl  ; then
 		echo " Error: FHEM still running!"
 	else
 		echo " stopped"
 	fi
+	RETVAL=0
         ;;
 'status')
         if start-stop-daemon -q -u fhem -K -t -x perl  ; then

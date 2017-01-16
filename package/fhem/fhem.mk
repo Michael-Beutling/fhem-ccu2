@@ -21,6 +21,7 @@ endef
 
 define FHEM_INSTALL_TARGET_CMDS
     $(INSTALL) -D -m 0766 $(FHEM_PKGDIR)S70fhem $(TARGET_DIR)/etc/init.d/
+    ln -s /etc/init.d/S70fhem $(TARGET_DIR)/sbin/fhem
 endef
 
 FHEM_INSTALL_IMAGES = YES
