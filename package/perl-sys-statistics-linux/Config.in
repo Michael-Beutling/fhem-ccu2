@@ -1,0 +1,6 @@
+config BR2_PACKAGE_PERL_SYS_STATISTICS_LINUX
+	bool "perl-sys-statistics-linux"
+	help
+	  Front-end module to collect system statistics
+
+	  https://metacpan.org/release/Sys-Statistics-Linux
