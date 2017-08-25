@@ -48,7 +48,7 @@ Vagrant.configure('2') do |config|
 		sudo apt-get -q -y install build-essential libncurses5-dev \
 			git bzr cvs mercurial subversion libc6:i386 unzip \
 			gcc-multilib linux-image-extra-virtual mtd-utils \
-			perlbrew
+			perlbrew zip
 		sudo apt-get -q -y autoremove
 		sudo apt-get -q -y clean"
 
