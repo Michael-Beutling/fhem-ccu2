@@ -29,7 +29,7 @@ define FHEM_INSTALL_IMAGES_CMDS
 	rm -f $(BINARIES_DIR)/fhem.tgz
 	rm -rf $(@D)/work
 	mkdir -p $(@D)/work/fhem
-	tar xzf $(@D)/fhem/fhem-5.7.tar.gz -C $(@D)/work/fhem --strip-components 1
+	tar xzf $(@D)/fhem/fhem-5.8.tar.gz -C $(@D)/work/fhem --strip-components 1
 	cat $(FHEM_PKGDIR)ccu2.cfg >> $(@D)/work/fhem/fhem.cfg
 	cp $(@D)/controls.txt $(@D)/work/fhem/FHEM/controls.txt
 	cp $(@D)/controls_fhem.txt $(@D)/work/fhem/FHEM/controls_fhem.txt
