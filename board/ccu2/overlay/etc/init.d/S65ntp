@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Network Time Protocol
+#
+
+
+start() {
+	echo "start ntp client"
+	start-stop-daemon -S -q  --exec /usr/sbin/ntpd -- -p pool.ntp.org
+}
+
+stop () {
+	echo "stop ntp client"
+	start-stop-daemon -K -q  --exec /usr/sbin/ntpd 
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+
